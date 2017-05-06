@@ -2,7 +2,6 @@
 
 // constructor
 Obj::Obj() {
-	cout << "Obj Constructor" << endl;
 }
 
 // set buffer
@@ -54,6 +53,14 @@ void Obj::setAll(pos _pos, int _width, int _height) {
 
 void Obj::setTexture(GLuint _buf) {
 	texture_buf = _buf;
+}
+
+void Obj::setStaticObj(pos _pos, int _size, float _depth, location _loc) {
+	setAnimatePosition(_pos);
+	setAll(_pos, _size, _size);
+	makeRect(0, 0, _size, _depth);
+	setShaderBuffer(_loc);
+	setBuffer();
 }
 
 // move objects with animation

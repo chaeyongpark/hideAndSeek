@@ -3,11 +3,16 @@
 Game::Game() {
 	projection = Ortho(0.0f, GAME_WIDTH, 0.0f, GAME_HEIGHT, -2, 2);
 	timer_laser = 0;
+	tagger_num = -1;
+	is_start = false;
 
-	cout << "Game Constructor" << endl;
+	cout << "Input Server Address: ";
+	cin >> server_address;
+
 	cout << "Loading..." << endl;
 	shaderInit();
-	textureInit();	
+	textureInit();
+	makeRandomObj();
 	addLaser();
 	cout << "Finish Loading" << endl;
 }
@@ -40,12 +45,11 @@ void Game::textureInit() {
 	texture_laser.load("img/laser_circle.png");
 }
 
-void Game::addNewPlayer(bool tagger) {
+void Game::addNewPlayer() {
 	Player *new_player;
-	if (tagger)
-		new_player = new Player(STATE_TAGGER, player.size());
-	else
-		new_player = new Player(player.size());
+	struct pos p = genRandomPos();
+
+	new_player = new Player(player.size(), p);
 	new_player->setShaderBuffer(loc);
 	new_player->setBuffer();
 
@@ -55,30 +59,93 @@ void Game::addNewPlayer(bool tagger) {
 void Game::addFlashlight() {
 	struct pos init_pos = player[0]->getInitPos();
 
-	flashlight.setAnimatePosition(init_pos);
-	flashlight.setAll(init_pos, 1920, 1920);
-	flashlight.makeRect(0, 0, 1920, 1.0);
-	flashlight.setShaderBuffer(loc);
-	flashlight.setBuffer();
+	flashlight.setStaticObj(init_pos, 1920, 1.2, loc);
 	flashlight.setTexture(texture_flashLight.getBuf());
 }
 
 void Game::addLaser() {
 	struct pos init_pos = { 480, 270 };
 
-	laser.setAnimatePosition(init_pos);
-	laser.setAll(init_pos, PLAYER_SIZE, PLAYER_SIZE);
-	laser.makeRect(0, 0, PLAYER_SIZE, 1.1);
-	laser.setShaderBuffer(loc);
-	laser.setBuffer();
+	laser.setStaticObj(init_pos, PLAYER_SIZE, 0, loc);
 	laser.setTexture(texture_laser.getBuf());
+}
+
+void Game::setState() {
+	int player_size = player.size();
+	int r;
+	tagger_num = rand() % player_size;
+
+	for (int i = 0; i < player_size; i++) {
+		if (i == tagger_num) {
+			player[i]->setState(STATE_TAGGER);
+			player[i]->setTexture(texture_tagger.getBuf());
+		}
+		else {
+			r = rand() % 3;
+			player[i]->setState(static_cast<STATE>(r+2));
+			player[i]->setTexture(texture_player[r].getBuf());
+		}
+	}
+	is_start = true;
+}
+
+void Game::makeRandomObj() {
+	struct pos r;
+	bool check = false;
+
+	while (trash_objects.size() != OBJECT_NUM) {
+		check = false;
+		r = { rand() % 12 * PLAYER_SIZE + PLAYER_SIZE / 2, rand() % 6 * PLAYER_SIZE + PLAYER_SIZE / 2 };
+		for (int i = 0; i < trash_objects.size(); i++) {
+			if (r.x == trash_objects[i]->getPos().x && r.y == trash_objects[i]->getPos().y) {
+				check = true;
+				break;
+			}
+		}
+		if (check)
+			continue;
+		struct Obj *obj = new Obj();
+		obj->setStaticObj({ r.x, r.y }, PLAYER_SIZE, 0, loc);
+		obj->setTexture(texture_player[rand() % 3].getBuf());
+		trash_objects.push_back(obj);
+	}
+	cout << "Finish Making Random Objects" << endl;
+}
+
+struct pos Game::genRandomPos() {
+	struct pos r;
+	bool check;
+
+	while (1) {
+		check = false;
+		cout << "Generating Random Number..." << endl;
+		r = { rand() % 12 * PLAYER_SIZE + PLAYER_SIZE / 2, rand() % 6 * PLAYER_SIZE + PLAYER_SIZE / 2 };
+		for (int i = 0; i < OBJECT_NUM; i++) {
+			if (r.x == trash_objects[i]->getPos().x && r.y == trash_objects[i]->getPos().y) {
+				check = true;
+				cout << "Generate ERROR" << endl;
+				break;
+			}
+		}
+		for (int i = 0; i < player.size(); i++) {
+			if (r.x == player[i]->getPos().x && r.y == player[i]->getPos().y) {
+				check = true;
+				cout << "Generate ERROR" << endl;
+				break;
+			}
+		}
+		if (check)
+			continue;
+		else
+			break;
+	}
+	return r;
 }
 
 void Game::drawLaser() {	
 	laser.draw();
 	laser.animateMove();
 	timer_laser--;
-	//cout << timer_laser << endl;
 }
 
 void Game::shoot() {
@@ -122,9 +189,15 @@ void Game::keyboard(unsigned char key) {
 	int random_player;
 	STATE r;
 
+	vector<struct pos> player_pos;
+
+	for (int i = 0; i < player.size(); i++)
+		player_pos.push_back(player[i]->getPos());
+
 	switch (key) {
 	case 'w':
-		player[0]->move(0, PLAYER_SIZE);
+		//player[0]->move(0, PLAYER_SIZE);
+		player[0]->setPos(player[0]->getPos().x, player[0]->getPos().y + PLAYER_SIZE);
 		break;
 	case 'a':
 		player[0]->move(-PLAYER_SIZE, 0);
@@ -147,25 +220,29 @@ void Game::keyboard(unsigned char key) {
 	case 'l':
 		player[1]->move(PLAYER_SIZE, 0);
 		break;
-	case '1':
-		addNewPlayer(true);
-		tagger_num = player.size() - 1;
-		player.back()->setTexture(texture_tagger.getBuf());
-		break;
-	case '2':
-		addNewPlayer(false);
-		player.back()->setTexture(texture_player[player.back()->getState()-2].getBuf());
+	case '1': case '2': case '3': case'4':
+		addNewPlayer();
 		break;
 	case 'h':
 		shoot();
-		hit = isCollision();
+		hit = laserCollision();
 		if (hit >= 0)
 			cout << "===" << hit << " HIT!===" << endl;
 		break;
 	case 't':
 		exit(0);
-	default: cout << "ILLIGAL INPUT " << key << endl;
+	case 'g':
+		setState();
+		break;
+	default: cout << "Illigal Input " << key << endl;
 	}
+
+	if (isCollision()) {
+		cout << "Object Collision" << endl;
+		for (int i = 0; i < player.size(); i++)
+			player[i]->setPos(player_pos[i]);
+	}
+
 }
 
 Player * Game::getPlayer(int n) {
@@ -173,18 +250,23 @@ Player * Game::getPlayer(int n) {
 }
 
 void Game::draw() {
-	glUniformMatrix4fv(loc.projection, 1, GL_TRUE, projection);
-	for (int i = 0; i < player.size(); i++)
-		player[i]->drawPlayer();
+	if (is_start) {
+		glUniformMatrix4fv(loc.projection, 1, GL_TRUE, projection);
+		for (int i = 0; i < player.size(); i++)
+			player[i]->drawPlayer();
 
-	if (timer_laser > 0)
-		drawLaser();
+		if (timer_laser > 0)
+			drawLaser();
 
+		for (int i = 0; i < OBJECT_NUM; i++) {
+			trash_objects[i]->draw();
+		}
+	}
 	//flashlight.draw();
 	//flashlight.animateMove();
 }
 
-int Game::isCollision() {
+int Game::laserCollision() {
 	struct pos tagger_pos = player[tagger_num]->getPos();
 	struct pos player_pos;
 	const int boundary = PLAYER_SIZE * 3 + 1;
@@ -247,4 +329,22 @@ int Game::isCollision() {
 		}
 	}
 	return num;
+}
+
+bool Game::isCollision(){
+	int obj_size = trash_objects.size();
+	int player_size = player.size();
+	for (int i = 0; i < player_size; i++) {
+		for (int j = 0; j < obj_size; j++) {
+			if (player[i]->getPos().x == trash_objects[j]->getPos().x &&
+				player[i]->getPos().y == trash_objects[j]->getPos().y)
+				return true;
+		}
+		for (int j = player_size - 1; j > i; j--) {
+			if (player[i]->getPos().x == player[j]->getPos().x &&
+				player[i]->getPos().y == player[j]->getPos().y)
+				return true;
+		}
+	}
+	return false;
 }

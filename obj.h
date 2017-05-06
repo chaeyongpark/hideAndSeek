@@ -54,6 +54,7 @@ public:
 	void setAnimatePosition(struct pos _pos);
 	void setAll(struct pos _pos, int _width, int _height);
 	void setTexture(GLuint _buf);
+	void setStaticObj(struct pos _pos, int _size, float _depth, struct location _loc);
 	void animateMove();
 	void draw();
 	void makeRect(float x1, float y1, float x2, float y2, float z);

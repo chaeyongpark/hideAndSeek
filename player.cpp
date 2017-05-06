@@ -1,36 +1,28 @@
 #include "player.h"
 
 Player::Player() {	
-	// Debug
-	cout << "Empty Plyaer Constructor" << endl;
 }
 
-Player::Player(int _id) {
+Player::Player(int _id, struct pos p) {
 	state = static_cast<STATE>(rand() % 3+2);
 	id = _id;
 
-	playerInit();
-
-	// Debug
-	cout << "Player Constructor Using ID" << endl;
+	playerInit(p);
 }
 
-Player::Player(STATE _state, int _id) {
+Player::Player(STATE _state, int _id, struct pos p) {
 	state = _state;
 	id = _id;
 
-	playerInit();
-	// Debug
-	cout << "Player Constructor Using State and ID" << endl;
+	playerInit(p);
 }
 
-void Player::playerInit() {
-	init_pos = { 480, 270 };
+void Player::playerInit(struct pos p) {
 	dir = DIR_A;
 
 	// set information of Player
-	setAnimatePosition(init_pos);
-	setAll(init_pos, PLAYER_SIZE, PLAYER_SIZE);
+	setAnimatePosition(p);
+	setAll(p, PLAYER_SIZE, PLAYER_SIZE);
 	makeRect(0, 0, PLAYER_SIZE, 0);
 }
 
@@ -50,6 +42,10 @@ void Player::drawPlayer() {
 
 DIRECTION Player::getDir() {
 	return dir;
+}
+
+void Player::setState(STATE _state) {
+	state = _state;
 }
 
 STATE Player::getState() {
