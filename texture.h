@@ -9,4 +9,5 @@ private:
 public:
 	bool load(char* fn);
 	void bind();
+	GLuint getBuf();
 };

@@ -33,11 +33,13 @@ bool Texture::load(char * fn) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
 	cout << "Texture: " << fn << " is successfully loaded" << endl;
-	
-	cout << endl;
 	return true;
 }
 
 void Texture::bind() {
 	glBindTexture(GL_TEXTURE_2D, buf);
+}
+
+GLuint Texture::getBuf() {
+	return buf;
 }

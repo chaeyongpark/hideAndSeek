@@ -27,7 +27,7 @@ struct location Obj::getLocation() {
 	return loc;
 }
 
-struct pos Obj::getPosition() {
+struct pos Obj::getPos() {
 	return position;
 }
 
@@ -52,8 +52,8 @@ void Obj::setAll(pos _pos, int _width, int _height) {
 	height = _height;
 }
 
-void Obj::setTexture(char * file_name) {
-	texture.load(file_name);
+void Obj::setTexture(GLuint _buf) {
+	texture_buf = _buf;
 }
 
 // move objects with animation
@@ -71,7 +71,7 @@ void Obj::draw() {
 
 	// texture buffer
 	glActiveTexture(GL_TEXTURE0);
-	texture.bind();
+	glBindTexture(GL_TEXTURE_2D, texture_buf);
 
 	glBindBuffer(GL_ARRAY_BUFFER, buf_address);
 	glVertexAttribPointer(loc.vertex, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(0));

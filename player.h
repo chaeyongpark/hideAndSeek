@@ -9,20 +9,22 @@
 
 using namespace std;
 
-typedef enum state { NONE, TAGGER, A, B, C } STATE;
+typedef enum state { STATE_NONE, STATE_TAGGER, STATE_A, STATE_B, STATE_C } STATE;
+typedef enum direction { DIR_W, DIR_E, DIR_D, DIR_C, DIR_X, DIR_Z, DIR_A, DIR_Q } DIRECTION;
 
 class Player : public Obj {
 private:
 	int id;	
 	STATE state;
-	string name;
 	mat4 projection;
 	struct pos init_pos;
+	DIRECTION dir;
 
 public:
 	Player();
+	Player(STATE _state, int _id);
 	struct pos getInitPos();
-	//void keyboard(unsigned char key);
 	void move(int _x, int _y);
 	void drawPlayer();
+	DIRECTION getDir();
 };

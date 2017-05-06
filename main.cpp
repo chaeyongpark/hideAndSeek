@@ -30,9 +30,6 @@ void init(int argc, char **argv) {
 	glDepthFunc(GL_LEQUAL);
 
 	game = new Game();
-	game->shaderInit();
-	game->addNewPlayer();
-	game->addFlashlight();
 }
 
 void draw() {
