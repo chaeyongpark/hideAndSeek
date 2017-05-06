@@ -5,7 +5,7 @@
 #include "Angel.h"
 #include "texture.h"
 
-#define PLAYER_SIZE 40
+#define PLAYER_SIZE 80
 #define ANIMATION_SPEED 7
 
 using namespace std;

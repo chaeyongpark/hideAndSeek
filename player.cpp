@@ -5,9 +5,26 @@ Player::Player() {
 	cout << "Empty Plyaer Constructor" << endl;
 }
 
+Player::Player(int _id) {
+	state = static_cast<STATE>(rand() % 3+2);
+	id = _id;
+
+	playerInit();
+
+	// Debug
+	cout << "Player Constructor Using ID" << endl;
+}
+
 Player::Player(STATE _state, int _id) {
 	state = _state;
 	id = _id;
+
+	playerInit();
+	// Debug
+	cout << "Player Constructor Using State and ID" << endl;
+}
+
+void Player::playerInit() {
 	init_pos = { 480, 270 };
 	dir = DIR_A;
 
@@ -15,9 +32,6 @@ Player::Player(STATE _state, int _id) {
 	setAnimatePosition(init_pos);
 	setAll(init_pos, PLAYER_SIZE, PLAYER_SIZE);
 	makeRect(0, 0, PLAYER_SIZE, 0);
-
-	// Debug
-	cout << "Plyaer Constructor" << endl;
 }
 
 struct pos Player::getInitPos() {
@@ -36,4 +50,8 @@ void Player::drawPlayer() {
 
 DIRECTION Player::getDir() {
 	return dir;
+}
+
+STATE Player::getState() {
+	return state;
 }

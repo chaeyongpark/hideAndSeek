@@ -33,13 +33,19 @@ void Game::shaderInit() {
 
 void Game::textureInit() {
 	texture_tagger.load("img/tagger.png");
-	texture_A.load("img/acorn.png");
+	texture_player[0].load("img/frog.png");
+	texture_player[1].load("img/acorn.png");
+	texture_player[2].load("img/dog.png");
 	texture_flashLight.load("img/flashLight.png");
 	texture_laser.load("img/laser_circle.png");
 }
 
-void Game::addNewPlayer(STATE _state) {
-	Player *new_player = new Player(_state, player.size());
+void Game::addNewPlayer(bool tagger) {
+	Player *new_player;
+	if (tagger)
+		new_player = new Player(STATE_TAGGER, player.size());
+	else
+		new_player = new Player(player.size());
 	new_player->setShaderBuffer(loc);
 	new_player->setBuffer();
 
@@ -113,6 +119,8 @@ void Game::shoot() {
 
 void Game::keyboard(unsigned char key) {
 	int hit;
+	int random_player;
+	STATE r;
 
 	switch (key) {
 	case 'w':
@@ -140,16 +148,15 @@ void Game::keyboard(unsigned char key) {
 		player[1]->move(PLAYER_SIZE, 0);
 		break;
 	case '1':
-		addNewPlayer(STATE_TAGGER);
+		addNewPlayer(true);
 		tagger_num = player.size() - 1;
 		player.back()->setTexture(texture_tagger.getBuf());
 		break;
 	case '2':
-		addNewPlayer(STATE_A);
-		player.back()->setTexture(texture_A.getBuf());
+		addNewPlayer(false);
+		player.back()->setTexture(texture_player[player.back()->getState()-2].getBuf());
 		break;
 	case 'h':
-		cout << "INPUT HIT" << endl;
 		shoot();
 		hit = isCollision();
 		if (hit >= 0)

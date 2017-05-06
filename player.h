@@ -2,6 +2,7 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <vector>
+#include <cstdlib>
 #include "Angel.h"
 #include "obj.h"
 
@@ -22,9 +23,12 @@ private:
 
 public:
 	Player();
+	Player(int _id);
 	Player(STATE _state, int _id);
+	void playerInit();
 	struct pos getInitPos();
 	void move(int _x, int _y);
 	void drawPlayer();
 	DIRECTION getDir();
+	STATE getState();
 };

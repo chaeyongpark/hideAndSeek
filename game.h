@@ -20,8 +20,9 @@ private:
 	vector<Player*> player;
 	mat4 projection;
 	Obj flashlight;
-	Texture texture_tagger, texture_A, texture_flashLight;
-	
+	Texture texture_tagger, texture_flashLight;
+	Texture texture_player[3];
+
 	// laser
 	Obj laser;
 	Texture texture_laser;
@@ -34,7 +35,7 @@ public:
 	Game();
 	void shaderInit();
 	void textureInit();
-	void addNewPlayer(STATE _state);
+	void addNewPlayer(bool tagger);
 	void addFlashlight();
 	void addLaser();
 	void keyboard(unsigned char key);

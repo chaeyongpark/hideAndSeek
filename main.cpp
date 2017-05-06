@@ -1,7 +1,9 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
+#include <ctime>
 #include "game.h"
+
 using namespace std;
 #define GLOBALTIMER 16
 
@@ -28,6 +30,7 @@ void init(int argc, char **argv) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	glDepthFunc(GL_LEQUAL);
+	srand(time(NULL));
 
 	game = new Game();
 }
