@@ -25,6 +25,7 @@ public:
 	Player();
 	Player(int _id, struct pos p);
 	Player(STATE _state, int _id, struct pos p);
+	void setId(int _id);
 	void playerInit(struct pos p);
 	struct pos getInitPos();
 	void move(int _x, int _y);
@@ -32,5 +33,4 @@ public:
 	DIRECTION getDir();
 	void setState(STATE _state);
 	STATE getState();
-	
 };

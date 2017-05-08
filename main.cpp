@@ -1,3 +1,9 @@
+/*
+ * POSTECH CSED353 Computer Network Project
+ * Hide and Seek
+ * chaeyong Park, junGyeong Choi and sohyeon Lee
+ * 2017.05
+ */
 #include <iostream>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
@@ -7,8 +13,10 @@
 using namespace std;
 #define GLOBALTIMER 16
 
+// game using global variable pointer
 Game *game;
 
+// OpenGL init
 void init(int argc, char **argv) {
 	glutInit(&argc, argv);
 
@@ -35,6 +43,7 @@ void init(int argc, char **argv) {
 	game = new Game();
 }
 
+// Draw everr CLOBALTIMER
 void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearDepth(1.0);
@@ -43,12 +52,15 @@ void draw() {
 	glFlush();
 }
 
+// Keyboard input
 void keyboard(unsigned char key, int x, int y) {	
 	game->keyboard(key);
 }
 
+// Call display 
 void timer(int value) {
 	glutTimerFunc(GLOBALTIMER, timer, value);
+	game->tick();
 	glutPostRedisplay();
 }
 
