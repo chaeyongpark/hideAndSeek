@@ -22,6 +22,7 @@ Game::Game() {
 	addLaser();
 	cout << "Finish Loading" << endl;
 	my_id = client.getParam().packets[0]->id;
+	cout << "MYID: " << my_id << endl;
 }
 
 // Init shader
@@ -57,29 +58,25 @@ void Game::textureInit() {
 // Add new Player
 void Game::addNewPlayer() {
 	Player *new_player;
-	//struct pos p = genRandomPos();
-	//my_id = player.size();
+
 	new_player = new Player();
 	new_player->setShaderBuffer(loc);
 	new_player->setBuffer();
-
 	player.push_back(new_player);
 }
 
 // Add all players using player numbers
 void Game::addPlayers() {
 	int player_size = client.getParam().packets.size();
-	cout << player_size << endl;
-	
+
 	for (int i = 0; i < player_size; i++)
 		addNewPlayer();
-	//cout << client.getParam().packets[0]->id << client.getParam().packets[1]->id << endl;
-	//cout << client.getParam().packets[0]->id << client.getParam().packets[1]->id << endl;
+	client.sortClient();
 }
 
 // Add flash light to game 
 void Game::addFlashlight() {
-	struct pos init_pos = player[0]->getInitPos();
+	struct pos init_pos = player[my_id]->getInitPos();
 
 	flashlight.setStaticObj(init_pos, 1920, 1.2, loc);
 	flashlight.setTexture(texture_flashLight.getBuf());
@@ -93,7 +90,7 @@ void Game::addLaser() {
 	laser.setTexture(texture_laser.getBuf());
 }
 
-// Set state
+// Set state (maybe not used)
 void Game::setState() {
 	int player_size = player.size();
 	int r;
@@ -247,7 +244,7 @@ void Game::polling() {
 
 // Call every tick
 void Game::tick() {
-	int hit;
+	int hit, i;
 	STATE s;
 
 	// When anyone press button
@@ -258,18 +255,17 @@ void Game::tick() {
 
 	// When tagger press 'G' button to start game
 	if (client.getIsG()) {
-		cout << "Game Start" << endl;
 		addPlayers();
-		update();
-		if (player[0]->getState() == STATE_TAGGER) {
-			player[0]->setTexture(texture_tagger.getBuf());
-			player[1]->setTexture(texture_player[player[1]->getState() - 2].getBuf());
+ 		update();
+		for (i = 0; i < player.size(); i++) {
+			s = player[i]->getState();
+			switch (s) {
+			case STATE_TAGGER:
+				player[i]->setTexture(texture_tagger.getBuf());
+			default:
+				player[i]->setTexture(texture_player[s - 2].getBuf());
+			}
 		}
-		else {
-			player[1]->setTexture(texture_tagger.getBuf());
-			player[0]->setTexture(texture_player[player[0]->getState() - 2].getBuf());
-		}
-
 		is_start = true;
 		client.setIsG();
 	}
@@ -279,56 +275,143 @@ void Game::tick() {
 		shoot();
 		hit = laserCollision();
 		if (hit >= 0)
-			cout << "===" << hit << " HIT!===" << endl;
+			cout << "Hit to " << hit << endl;
 		client.setIsH();
 	}
 }
 
 // keyboard function
 void Game::keyboard(unsigned char key) {
-	
 	int ran;
 	int random_player;
 	struct pos p;
 	STATE r;
-	struct pos my_pos = player[0]->getPos();
+	struct pos my_pos;
 
+	/*
 	switch (key) {
+	// Change direction
 	case 'w':
-		p = { my_pos.x, my_pos.y + PLAYER_SIZE };
-		if (!isCollision(p)) {
-			client.sendPacket({ p.x, p.y}, 'w');
-			polling();
-		}
+		player[my_id]->setDir(DIR_W);
 		break;
-	case 'a':
-		p = { my_pos.x - PLAYER_SIZE, my_pos.y};
-		if (!isCollision(p)) {
-			client.sendPacket({ p.x, p.y }, 'a');
-			polling();
-		}
-		break;
-	case 's':
-		p = { my_pos.x, my_pos.y - PLAYER_SIZE };
-		if (!isCollision(p)) {
-			client.sendPacket({ p.x, p.y }, 's');
-			polling();
-		}
+	case 'e':
+		player[my_id]->setDir(DIR_E);
 		break;
 	case 'd':
-		p = { my_pos.x + PLAYER_SIZE, my_pos.y };
+		player[my_id]->setDir(DIR_D);
+		break;
+	case 'c':
+		player[my_id]->setDir(DIR_C);
+		break;
+	case 'x':
+		player[my_id]->setDir(DIR_X);
+		break;
+	case 'z':
+		player[my_id]->setDir(DIR_Z);
+		break;
+	case 'a':
+		player[my_id]->setDir(DIR_A);
+		break;
+	case 'q':
+		player[my_id]->setDir(DIR_Q);
+		break;
+	// Move
+	case 'j':
+		my_pos = player[my_id]->getPos();
+		switch (player[my_id]->getDir()) {
+		case DIR_W:
+			p = { my_pos.x, my_pos.y + PLAYER_SIZE };
+			break;
+		case DIR_E:
+			p = { my_pos.x + PLAYER_SIZE, my_pos.y + PLAYER_SIZE };
+			break;
+		case DIR_D:
+			p = { my_pos.x + PLAYER_SIZE, my_pos.y };
+			break;
+		case DIR_C:
+			p = { my_pos.x + PLAYER_SIZE, my_pos.y - PLAYER_SIZE };
+			break;
+		case DIR_X:
+			p = { my_pos.x, my_pos.y - PLAYER_SIZE };
+			break;
+		case DIR_Z:
+			p = { my_pos.x - PLAYER_SIZE, my_pos.y - PLAYER_SIZE };
+			break;
+		case DIR_A:
+			p = { my_pos.x - PLAYER_SIZE, my_pos.y };
+			break;
+		case DIR_Q:
+			p = { my_pos.x - PLAYER_SIZE, my_pos.y + PLAYER_SIZE };
+			break;
+		}
 		if (!isCollision(p)) {
-			client.sendPacket({ p.x, p.y }, 'd');
+			client.sendPacket({ p.x, p.y }, 'j', my_id);
 			polling();
 		}
 		break;
 	case 'h':
+		if (my_id != tagger_id)
+			break;
+		my_pos = player[my_id]->getPos();
 		p = { my_pos.x, my_pos.y };
-		client.sendPacket({ p.x, p.y }, 'h');
+		client.sendPacket({ p.x, p.y }, 'h', my_id);
+		break;
+	case 'g':
+		if (my_id != 0)
+			break;
+		client.sendPacket({ 0, 0 }, 'g', my_id);
+		break;
+	case 't':
+		exit(0);
+	default: cout << "Illigal Input " << key << endl;
+	}
+	*/
+
+	switch (key) {		
+	case 'w':
+		my_pos = player[my_id]->getPos();
+		p = { my_pos.x, my_pos.y + PLAYER_SIZE };
+		if (!isCollision(p)) {
+			client.sendPacket({ p.x, p.y}, 'w', my_id);
+			polling();
+		}
+		break;
+	case 'a':
+		my_pos = player[my_id]->getPos();
+		p = { my_pos.x - PLAYER_SIZE, my_pos.y};
+		if (!isCollision(p)) {
+			client.sendPacket({ p.x, p.y }, 'a', my_id);
+			polling();
+		}
+		break;
+	case 's':
+		my_pos = player[my_id]->getPos();
+		p = { my_pos.x, my_pos.y - PLAYER_SIZE };
+		if (!isCollision(p)) {
+			client.sendPacket({ p.x, p.y }, 's', my_id);
+			polling();
+		}
+		break;
+	case 'd':
+		my_pos = player[my_id]->getPos();
+		p = { my_pos.x + PLAYER_SIZE, my_pos.y };
+		if (!isCollision(p)) {
+			client.sendPacket({ p.x, p.y }, 'd', my_id);
+			polling();
+		}
+		break;
+	case 'h':
+		if (my_id != tagger_id)
+			break;
+		my_pos = player[my_id]->getPos();
+		p = { my_pos.x, my_pos.y };
+		client.sendPacket({ p.x, p.y }, 'h', my_id);
 		break;	
 	case 'g':
+		if (my_id != 0)
+			break;
 		p = { 0, 0 };
-		client.sendPacket({ p.x, p.y }, 'g');
+		client.sendPacket({ p.x, p.y }, 'g', my_id);
 		break;
 	case 't':
 		exit(0);

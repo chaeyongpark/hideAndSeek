@@ -58,21 +58,27 @@ bool Client::init(char *_server_address, u_int _server_port, struct position _p)
 	CreateThread(NULL, 0, startMethodInClass, this, 0, NULL);
 	//CreateThread(NULL, 0, ThreadFunction, (LPVOID)&param, 0, NULL);
 	
-	sendPacket(_p, 'a');
+	sendPacket(_p, 'a', packet->id);
 
 	return true;
 }
 
 // Send packet function
-bool Client::sendPacket(struct position _pos, char _key)
+bool Client::sendPacket(struct position _pos, char _key, int my_id)
 {
 	char buf[BUFSIZE];
 	PACKET send_packet;
-
-	send_packet.client_socket = param.packets[0]->client_socket;
+	
+	if (my_id == -1) {
+		send_packet.client_socket = param.packets[0]->client_socket;
+		send_packet.id = param.packets[0]->id;
+	}
+	else {
+		send_packet.client_socket = param.packets[my_id]->client_socket;
+		send_packet.id = param.packets[my_id]->id;
+	}
 	send_packet.pos = _pos;
-	send_packet.key = _key;
-	send_packet.id = param.packets[0]->id;
+	send_packet.key = _key;	
 
 	memcpy(buf, &send_packet, sizeof(PACKET));
 	if (send(param.sock, buf, sizeof(PACKET), 0) == SOCKET_ERROR)
@@ -109,10 +115,9 @@ DWORD Client::ThreadFunction(LPVOID pvoid) {
 		}
 		memcpy(tmp_packet, buf, sizeof(PACKET));
 
-		cout << "       " <<tmp_packet->key << "       " << endl;
+		cout << "Receive key: " << tmp_packet->key << endl;
 		
 		if (tmp_packet->key == '!') {
-			cout << "smRlavy" << endl;
 			is_g++;
 			continue;
 		}
@@ -122,15 +127,15 @@ DWORD Client::ThreadFunction(LPVOID pvoid) {
 		}
 
 		for (i = 0; i < param.packets.size(); i++) {
-			
-
+			/*
 			cout << param.packets[i]->client_socket << endl;
 			cout << tmp_packet->client_socket << endl;
 			cout << param.packets[i]->id << endl;
 			cout << tmp_packet->id << endl;
 			cout << param.packets[i]->pos.x << " " << param.packets[i]->pos.y << endl;
 			cout << tmp_packet->pos.x << " " << tmp_packet->pos.y << endl;
-			
+			*/
+
 			if (param.packets[i]->client_socket == tmp_packet->client_socket) {
 				param.packets[i]->id = tmp_packet->id;
 			}				
@@ -157,7 +162,9 @@ PARAMETER Client::getParam() {
 
 // Sort client along ID
 void Client::sortClient() {
+	cout << "SORT SIZE: " << param.packets.size() << endl;
 	sort(param.packets.begin(), param.packets.end(), cmp);
+	cout << "SORT SIZE: " << param.packets.size() << endl;
 }
 
 // Get is_update

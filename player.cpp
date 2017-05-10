@@ -52,6 +52,10 @@ void Player::drawPlayer() {
 	animateMove();
 }
 
+void Player::setDir(DIRECTION _dir) {
+	dir = _dir;
+}
+
 // Get flash light direction of player
 DIRECTION Player::getDir() {
 	return dir;

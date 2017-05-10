@@ -30,6 +30,7 @@ public:
 	struct pos getInitPos();
 	void move(int _x, int _y);
 	void drawPlayer();
+	void setDir(DIRECTION _dir);
 	DIRECTION getDir();
 	void setState(STATE _state);
 	STATE getState();

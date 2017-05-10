@@ -42,7 +42,7 @@ private:
 public:
 	Client();
 	bool init(char *_server_address, u_int _server_port, struct position _p);
-	bool sendPacket(struct position _pos, char _key);
+	bool sendPacket(struct position _pos, char _key, int my_id);
 	void close();
 	DWORD WINAPI ThreadFunction(LPVOID pvoid);
 	PARAMETER getParam();

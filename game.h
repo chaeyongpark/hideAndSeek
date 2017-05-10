@@ -11,7 +11,7 @@
 #define GAME_HEIGHT 540
 #define LASER_TIMER 10
 #define OBJECT_NUM 10
-#define UPDATE_DELAY 7
+#define UPDATE_DELAY 5
 
 using namespace std;
 
