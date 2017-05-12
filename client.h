@@ -25,19 +25,24 @@ typedef struct packet {
 typedef struct parameter {
 	SOCKET sock;
 	SOCKADDR_IN serveraddr;
-	//PACKET my_packet;
 	vector<PACKET *> packets;
 } PARAMETER;
+
+typedef struct obstacle_packet {
+	struct position pos;
+	int type;
+} OBSTACLE_PACKET;
 
 class Client {
 private:
 	WSADATA wsa;
 	SOCKADDR_IN server_addr;
 	PARAMETER param;
-	vector<struct position *> obstacle;
+	vector<OBSTACLE_PACKET*> obstacle;
 	int is_update;
 	int is_g;
 	int is_h;
+	int is_t;
 
 public:
 	Client();
@@ -53,4 +58,7 @@ public:
 	void setIsG();
 	int getIsH();
 	void setIsH();
+	int getIsT();
+
+	vector<OBSTACLE_PACKET*> getObstaclePos();
 };

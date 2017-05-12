@@ -5,7 +5,7 @@
 #include "Angel.h"
 #include "texture.h"
 
-#define PLAYER_SIZE 80
+#define PLAYER_SIZE 60
 #define ANIMATION_SPEED 7
 
 using namespace std;
@@ -26,17 +26,19 @@ struct location {
 class Obj {
 private:
 	struct pos position;
-	struct pos animate_position;
 	int width, height;
 
-	/* shader */
-	struct location loc;
-	GLuint buf_address;
+	// shader
 	vector<vec3> vec_ver;
 	vector<vec4> vec_col;
 	vector<vec2> vec_texture;
-	GLuint texture_buf;
+
+protected:
+	struct location loc;
+	struct pos animate_position;
 	int num_vertex = 6;
+	GLuint texture_buf;
+	GLuint buf_address;
 
 public:
 	/* Constructor */

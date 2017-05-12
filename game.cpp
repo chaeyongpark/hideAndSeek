@@ -8,6 +8,8 @@ Game::Game() {
 	is_start = false;
 	my_id = -1;
 	timer_update = 0;
+	timer = 0;
+	is_game = 1;
 
 	cout << "Input Server Address: ";
 	cin >> server_address;
@@ -18,11 +20,21 @@ Game::Game() {
 	cout << "Loading..." << endl;
 	shaderInit();
 	textureInit();
-	//makeRandomObj();
 	addLaser();
-	cout << "Finish Loading" << endl;
+	ending.setStaticObj({ 480, 270 }, 540, 2, loc);
 	my_id = client.getParam().packets[0]->id;
-	cout << "MYID: " << my_id << endl;
+	vector<OBSTACLE_PACKET*> obstacle = client.getObstaclePos();
+	cout << obstacle.size() << endl;
+
+	for (int i = 0; i < obstacle.size(); i++) {
+		struct Obj *obj = new Obj();
+		cout << obstacle[i]->pos.x << "  " << obstacle[i]->pos.y << " " << obstacle[i]->type << endl;
+		obj->setStaticObj({ obstacle[i]->pos.x, obstacle[i]->pos.y }, PLAYER_SIZE, 0, loc);
+		obj->setTexture(texture_player[obstacle[i]->type].getBuf());
+		trash_objects.push_back(obj);
+	}
+	cout << "Finish Loading" << endl;
+	addBlock();
 }
 
 // Init shader
@@ -51,8 +63,11 @@ void Game::textureInit() {
 	texture_player[0].load("img/frog.png");
 	texture_player[1].load("img/acorn.png");
 	texture_player[2].load("img/dog.png");
-	texture_flashLight.load("img/flashLight.png");
+	texture_flashLight.load("img/flashlight.png");
 	texture_laser.load("img/laser_circle.png");
+	texture_block.load("img/block.png");
+	texture_tagger_win.load("img/tagger_win.png");
+	texture_runner_win.load("img/runner_win.png");
 }
 
 // Add new Player
@@ -76,9 +91,9 @@ void Game::addPlayers() {
 
 // Add flash light to game 
 void Game::addFlashlight() {
-	struct pos init_pos = player[my_id]->getInitPos();
+	struct pos flash_pos = player[my_id]->getPos();
 
-	flashlight.setStaticObj(init_pos, 1920, 1.2, loc);
+	flashlight.setStaticObj(flash_pos, 1920, 1.2, loc);
 	flashlight.setTexture(texture_flashLight.getBuf());
 }
 
@@ -88,81 +103,6 @@ void Game::addLaser() {
 
 	laser.setStaticObj(init_pos, PLAYER_SIZE, 0, loc);
 	laser.setTexture(texture_laser.getBuf());
-}
-
-// Set state (maybe not used)
-void Game::setState() {
-	int player_size = player.size();
-	int r;
-	tagger_id = rand() % player_size;
-
-	for (int i = 0; i < player_size; i++) {
-		if (i == tagger_id) {
-			player[i]->setState(STATE_TAGGER);
-			player[i]->setTexture(texture_tagger.getBuf());
-		}
-		else {
-			r = rand() % 3;
-			player[i]->setState(static_cast<STATE>(r+2));
-			player[i]->setTexture(texture_player[r].getBuf());
-		}
-	}
-	is_start = true;
-}
-
-// Make random objects (maybe not used)
-void Game::makeRandomObj() {
-	struct pos r;
-	bool check = false;
-
-	while (trash_objects.size() != OBJECT_NUM) {
-		check = false;
-		r = { rand() % 12 * PLAYER_SIZE + PLAYER_SIZE / 2, rand() % 6 * PLAYER_SIZE + PLAYER_SIZE / 2 };
-		for (int i = 0; i < trash_objects.size(); i++) {
-			if (r.x == trash_objects[i]->getPos().x && r.y == trash_objects[i]->getPos().y) {
-				check = true;
-				break;
-			}
-		}
-		if (check)
-			continue;
-		struct Obj *obj = new Obj();
-		obj->setStaticObj({ r.x, r.y }, PLAYER_SIZE, 0, loc);
-		obj->setTexture(texture_player[rand() % 3].getBuf());
-		trash_objects.push_back(obj);
-	}
-	cout << "Finish Making Random Objects" << endl;
-}
-
-// Generate random position (maybe not used)
-struct pos Game::genRandomPos() {
-	struct pos r;
-	bool check;
-
-	while (1) {
-		check = false;
-		cout << "Generating Random Number..." << endl;
-		r = { rand() % 12 * PLAYER_SIZE + PLAYER_SIZE / 2, rand() % 6 * PLAYER_SIZE + PLAYER_SIZE / 2 };
-		for (int i = 0; i <trash_objects.size(); i++) {
-			if (r.x == trash_objects[i]->getPos().x && r.y == trash_objects[i]->getPos().y) {
-				check = true;
-				cout << "Duplicate ERROR" << endl;
-				break;
-			}
-		}
-		for (int i = 0; i < player.size(); i++) {
-			if (r.x == player[i]->getPos().x && r.y == player[i]->getPos().y) {
-				check = true;
-				cout << "Duplicate ERROR" << endl;
-				break;
-			}
-		}
-		if (check)
-			continue;
-		else
-			break;
-	}
-	return r;
 }
 
 // Draw Laser
@@ -245,7 +185,32 @@ void Game::polling() {
 // Call every tick
 void Game::tick() {
 	int hit, i;
+	static int time = 0;
 	STATE s;
+	time++;
+
+	if (is_game > 1)
+		return;
+
+	// runner win
+	if (timer > 60) {
+		cout << "BACK" << endl;
+		ending.setTexture(texture_runner_win.getBuf());
+		is_game = 3;
+	}
+
+	// tagger win
+	if (client.getIsT()) {
+		cout << "END" << endl;
+		ending.setTexture(texture_tagger_win.getBuf());
+		is_game = 2;
+	}
+
+	// calculate time
+	if (time == GLOBAL_TIMER) {
+		time = 0;
+		timer++;
+	}
 
 	// When anyone press button
 	if (client.getIsUpdate()) {
@@ -262,11 +227,15 @@ void Game::tick() {
 			switch (s) {
 			case STATE_TAGGER:
 				player[i]->setTexture(texture_tagger.getBuf());
+				break;
 			default:
 				player[i]->setTexture(texture_player[s - 2].getBuf());
+				break;
 			}
 		}
 		is_start = true;
+		timer = 0;
+		addFlashlight();
 		client.setIsG();
 	}
 
@@ -274,10 +243,29 @@ void Game::tick() {
 	if (client.getIsH()) {
 		shoot();
 		hit = laserCollision();
-		if (hit >= 0)
+		if (hit = !tagger_id) {
 			cout << "Hit to " << hit << endl;
+			client.sendPacket({ player[my_id]->getPos().x,  player[my_id]->getPos().y }, 't', my_id);
+		}
 		client.setIsH();
 	}
+}
+
+void Game::drawBlock() {
+	const int width = GAME_WIDTH / PLAYER_SIZE;
+	const int height = GAME_HEIGHT / PLAYER_SIZE;
+
+	for (int i = 0; i < width; i++) {
+		for (int j = 0; j < height; j++) {
+			block.setAnimatePosition({ i*PLAYER_SIZE + PLAYER_SIZE / 2, j*PLAYER_SIZE + PLAYER_SIZE / 2 });
+			block.draw();
+		}
+	}	
+}
+
+void Game::addBlock() {
+	block.setStaticObj({ 0, 0 }, PLAYER_SIZE, 0.0, loc);
+	block.setTexture(texture_block.getBuf());
 }
 
 // keyboard function
@@ -288,32 +276,42 @@ void Game::keyboard(unsigned char key) {
 	STATE r;
 	struct pos my_pos;
 
-	/*
+	if (is_game > 1)
+		return;
+
 	switch (key) {
 	// Change direction
 	case 'w':
 		player[my_id]->setDir(DIR_W);
+		flashlight.setAngle(180);
 		break;
 	case 'e':
 		player[my_id]->setDir(DIR_E);
+		flashlight.setAngle(135);
 		break;
 	case 'd':
 		player[my_id]->setDir(DIR_D);
+		flashlight.setAngle(90);
 		break;
 	case 'c':
 		player[my_id]->setDir(DIR_C);
+		flashlight.setAngle(45);
 		break;
 	case 'x':
 		player[my_id]->setDir(DIR_X);
+		flashlight.setAngle(0);
 		break;
 	case 'z':
 		player[my_id]->setDir(DIR_Z);
+		flashlight.setAngle(-45);
 		break;
 	case 'a':
 		player[my_id]->setDir(DIR_A);
+		flashlight.setAngle(-90);
 		break;
 	case 'q':
 		player[my_id]->setDir(DIR_Q);
+		flashlight.setAngle(-135);
 		break;
 	// Move
 	case 'j':
@@ -347,6 +345,7 @@ void Game::keyboard(unsigned char key) {
 		if (!isCollision(p)) {
 			client.sendPacket({ p.x, p.y }, 'j', my_id);
 			polling();
+			flashlight.setPos({ p.x, p.y });
 		}
 		break;
 	case 'h':
@@ -359,59 +358,7 @@ void Game::keyboard(unsigned char key) {
 	case 'g':
 		if (my_id != 0)
 			break;
-		client.sendPacket({ 0, 0 }, 'g', my_id);
-		break;
-	case 't':
-		exit(0);
-	default: cout << "Illigal Input " << key << endl;
-	}
-	*/
-
-	switch (key) {		
-	case 'w':
-		my_pos = player[my_id]->getPos();
-		p = { my_pos.x, my_pos.y + PLAYER_SIZE };
-		if (!isCollision(p)) {
-			client.sendPacket({ p.x, p.y}, 'w', my_id);
-			polling();
-		}
-		break;
-	case 'a':
-		my_pos = player[my_id]->getPos();
-		p = { my_pos.x - PLAYER_SIZE, my_pos.y};
-		if (!isCollision(p)) {
-			client.sendPacket({ p.x, p.y }, 'a', my_id);
-			polling();
-		}
-		break;
-	case 's':
-		my_pos = player[my_id]->getPos();
-		p = { my_pos.x, my_pos.y - PLAYER_SIZE };
-		if (!isCollision(p)) {
-			client.sendPacket({ p.x, p.y }, 's', my_id);
-			polling();
-		}
-		break;
-	case 'd':
-		my_pos = player[my_id]->getPos();
-		p = { my_pos.x + PLAYER_SIZE, my_pos.y };
-		if (!isCollision(p)) {
-			client.sendPacket({ p.x, p.y }, 'd', my_id);
-			polling();
-		}
-		break;
-	case 'h':
-		if (my_id != tagger_id)
-			break;
-		my_pos = player[my_id]->getPos();
-		p = { my_pos.x, my_pos.y };
-		client.sendPacket({ p.x, p.y }, 'h', my_id);
-		break;	
-	case 'g':
-		if (my_id != 0)
-			break;
-		p = { 0, 0 };
-		client.sendPacket({ p.x, p.y }, 'g', my_id);
+		client.sendPacket({ client.getParam().packets[0]->pos.x, client.getParam().packets[0]->pos.y }, 'g', my_id);
 		break;
 	case 't':
 		exit(0);
@@ -429,6 +376,7 @@ void Game::draw() {
 	static int cnt = 0;
 	if (is_start) {
 		glUniformMatrix4fv(loc.projection, 1, GL_TRUE, projection);
+		drawBlock();
 		for (int i = 0; i < player.size(); i++)
 			player[i]->drawPlayer();
 
@@ -438,6 +386,12 @@ void Game::draw() {
 		for (int i = 0; i < trash_objects.size(); i++) {
 			trash_objects[i]->draw();
 		}
+
+		flashlight.draw();
+		flashlight.animateMove();
+
+		if (is_game > 1)
+			ending.draw();
 	}	
 }
 
@@ -518,6 +472,7 @@ bool Game::isCollision(struct pos p){
 			p.y == trash_objects[i]->getPos().y)
 			return true;
 	}
+
 	for (int i = 0; i < player_size; i++) {
 		if (i == my_id)
 			continue;
@@ -525,5 +480,8 @@ bool Game::isCollision(struct pos p){
 			player[i]->getPos().y == p.y)
 			return true;
 	}
+	if (p.x < 0 || p.x > GAME_WIDTH || p.y < 0 || p.y > GAME_HEIGHT)
+		return true;
+
 	return false;
 }

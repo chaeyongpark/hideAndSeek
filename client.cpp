@@ -18,6 +18,7 @@ Client::Client() {
 	is_update = -1;
 	is_g = 0;
 	is_h = 0;
+	is_t = 0;
 }
 
 // Init Client 
@@ -40,14 +41,24 @@ bool Client::init(char *_server_address, u_int _server_port, struct position _p)
 
 	if (connect(param.sock, (SOCKADDR *)&server_addr, sizeof(server_addr)) == SOCKET_ERROR)
 		return false;
-	/*
-	recv(param.sock, buf, sizeof(PACKET), 0);
+	
+	recv(param.sock, buf, sizeof(OBSTACLE_PACKET)*20 + sizeof(int), 0);
 	memcpy(&obstacle_num, buf, sizeof(int));
 	for (int i = 0; i < obstacle_num; i++) {
-		struct position *p = (struct position *)malloc(sizeof(struct position));
+		OBSTACLE_PACKET *obs = (OBSTACLE_PACKET*)malloc(sizeof(OBSTACLE_PACKET));
+		struct position *p = (struct position*)malloc(sizeof(struct position));
 		memcpy(p, buf + sizeof(int) + i * sizeof(struct position), sizeof(struct position));
-		obstacle.push_back(p);
-	}*/
+		obs->pos = *p;
+		free(p);
+
+		obstacle.push_back(obs);
+	}
+
+	for (int i = 0; i < obstacle_num; i++) {
+		int type;
+		memcpy(&type, buf + sizeof(int) + 20 * sizeof(struct position) + i * sizeof(int), sizeof(int));
+		obstacle[i]->type = type;
+	}
 
 	PACKET *packet = (PACKET *)malloc(sizeof(PACKET));
 	packet->client_socket = param.sock;
@@ -56,7 +67,6 @@ bool Client::init(char *_server_address, u_int _server_port, struct position _p)
 
 	param.packets.push_back(packet);
 	CreateThread(NULL, 0, startMethodInClass, this, 0, NULL);
-	//CreateThread(NULL, 0, ThreadFunction, (LPVOID)&param, 0, NULL);
 	
 	sendPacket(_p, 'a', packet->id);
 
@@ -125,17 +135,12 @@ DWORD Client::ThreadFunction(LPVOID pvoid) {
 			is_h++;
 			continue;
 		}
+		else if (tmp_packet->key == '@') {
+			is_t = 1;
+			continue;
+		}
 
 		for (i = 0; i < param.packets.size(); i++) {
-			/*
-			cout << param.packets[i]->client_socket << endl;
-			cout << tmp_packet->client_socket << endl;
-			cout << param.packets[i]->id << endl;
-			cout << tmp_packet->id << endl;
-			cout << param.packets[i]->pos.x << " " << param.packets[i]->pos.y << endl;
-			cout << tmp_packet->pos.x << " " << tmp_packet->pos.y << endl;
-			*/
-
 			if (param.packets[i]->client_socket == tmp_packet->client_socket) {
 				param.packets[i]->id = tmp_packet->id;
 			}				
@@ -195,4 +200,12 @@ int Client::getIsH() {
 // initial is_h
 void Client::setIsH() {
 	is_h = 0;
+}
+
+int Client::getIsT() {
+	return is_t;
+}
+
+vector<OBSTACLE_PACKET*> Client::getObstaclePos() {
+	return obstacle;
 }

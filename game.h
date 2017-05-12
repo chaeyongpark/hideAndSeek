@@ -5,6 +5,7 @@
 #include "player.h"
 #include "Angel.h"
 #include "client.h"
+#include "flash.h"
 #include <cmath>
 
 #define GAME_WIDTH 960
@@ -12,6 +13,7 @@
 #define LASER_TIMER 10
 #define OBJECT_NUM 10
 #define UPDATE_DELAY 5
+#define GLOBAL_TIMER 60
 
 using namespace std;
 
@@ -24,7 +26,9 @@ private:
 	bool is_start;
 	vector<Player*> player;
 	vector<Obj*> trash_objects;
-	Obj flashlight;
+	Flash flashlight;
+	Obj block, ending;
+	int is_game;
 
 	// laser
 	Obj laser;
@@ -36,6 +40,7 @@ private:
 	mat4 projection;
 	Texture texture_tagger, texture_flashLight;
 	Texture texture_player[3];
+	Texture texture_block, texture_tagger_win, texture_runner_win;
 
 	// Network
 	char server_address[16];
@@ -48,20 +53,24 @@ public:
 	void textureInit();
 	void addFlashlight();
 	void addLaser();
-	void setState();
-	void makeRandomObj();
-	struct pos genRandomPos();
 	void addNewPlayer();
 	void addPlayers();
 	void keyboard(unsigned char key);
 	Player* getPlayer(int n);
 	void draw();
+	int laserCollision();
+	bool isCollision(struct pos p);
+
+	// laser
 	void drawLaser();
 	void shoot();
+
+	// every tick;
 	void update();
 	void polling();
 	void tick();
 
-	int laserCollision();
-	bool isCollision(struct pos p);
+	// block
+	void drawBlock();
+	void addBlock();
 };
