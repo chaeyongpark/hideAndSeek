@@ -39,9 +39,11 @@ bool Client::init(char *_server_address, u_int _server_port, struct position _p)
 	server_addr.sin_addr.s_addr = inet_addr(_server_address);
 	server_addr.sin_port = htons(_server_port);
 
+	// Connect
 	if (connect(param.sock, (SOCKADDR *)&server_addr, sizeof(server_addr)) == SOCKET_ERROR)
 		return false;
 	
+	// Receive trash objects information
 	recv(param.sock, buf, sizeof(OBSTACLE_PACKET)*20 + sizeof(int), 0);
 	memcpy(&obstacle_num, buf, sizeof(int));
 	for (int i = 0; i < obstacle_num; i++) {
@@ -54,12 +56,14 @@ bool Client::init(char *_server_address, u_int _server_port, struct position _p)
 		obstacle.push_back(obs);
 	}
 
+	// Store objects
 	for (int i = 0; i < obstacle_num; i++) {
 		int type;
 		memcpy(&type, buf + sizeof(int) + 20 * sizeof(struct position) + i * sizeof(int), sizeof(int));
 		obstacle[i]->type = type;
 	}
 
+	// Make open Packet
 	PACKET *packet = (PACKET *)malloc(sizeof(PACKET));
 	packet->client_socket = param.sock;
 	packet->id = -1;
@@ -79,6 +83,7 @@ bool Client::sendPacket(struct position _pos, char _key, int my_id)
 	char buf[BUFSIZE];
 	PACKET send_packet;
 	
+	// When packet is first packet
 	if (my_id == -1) {
 		send_packet.client_socket = param.packets[0]->client_socket;
 		send_packet.id = param.packets[0]->id;
@@ -91,6 +96,7 @@ bool Client::sendPacket(struct position _pos, char _key, int my_id)
 	send_packet.key = _key;	
 
 	memcpy(buf, &send_packet, sizeof(PACKET));
+	// Send
 	if (send(param.sock, buf, sizeof(PACKET), 0) == SOCKET_ERROR)
 		return false;
 
@@ -109,11 +115,9 @@ DWORD Client::ThreadFunction(LPVOID pvoid) {
 	int i;
 	char buf[BUFSIZE] = { 0 };
 	
-	//PARAMETER* dup_param = ((PARAMETER *)pvoid);
-	
 	while (1) {
 		PACKET *tmp_packet = (PACKET*)malloc(sizeof(PACKET));
-		/* Receive data */
+		// Receive data 
 		retval = recv(param.sock, buf, sizeof(PACKET), 0);
 
 		if (retval == SOCKET_ERROR) {
@@ -127,14 +131,17 @@ DWORD Client::ThreadFunction(LPVOID pvoid) {
 
 		cout << "Receive key: " << tmp_packet->key << endl;
 		
+		// If Game start
 		if (tmp_packet->key == '!') {
 			is_g++;
 			continue;
 		}
+		// If tagger shoot
 		else if (tmp_packet->key == '?') {
 			is_h++;
 			continue;
 		}
+		// If game finish
 		else if (tmp_packet->key == '@') {
 			is_t = 1;
 			continue;
@@ -167,9 +174,7 @@ PARAMETER Client::getParam() {
 
 // Sort client along ID
 void Client::sortClient() {
-	cout << "SORT SIZE: " << param.packets.size() << endl;
 	sort(param.packets.begin(), param.packets.end(), cmp);
-	cout << "SORT SIZE: " << param.packets.size() << endl;
 }
 
 // Get is_update
@@ -202,10 +207,12 @@ void Client::setIsH() {
 	is_h = 0;
 }
 
+// get is_t
 int Client::getIsT() {
 	return is_t;
 }
 
+// get trash objects position
 vector<OBSTACLE_PACKET*> Client::getObstaclePos() {
 	return obstacle;
 }

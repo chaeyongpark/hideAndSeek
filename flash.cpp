@@ -1,10 +1,12 @@
 #include "flash.h"
 
+// Flash constructor
 Flash::Flash() {
 	angle = -90;
 	animate_angle = -90;
 }
 
+// Draw flash
 void Flash::draw() {
 	vec3 moveVec(animate_position.x, animate_position.y, 0.0);
 	mat4 transform = Translate(moveVec);
@@ -27,16 +29,18 @@ void Flash::draw() {
 	glDrawArrays(GL_TRIANGLES, 0, num_vertex);
 }
 
+// Set flash direction along its player
 void Flash::setDir(int _dir) {
 	dir = _dir;
 }
 
+// Set angle of flash
 void Flash::setAngle(int _angle) {
 	angle = _angle;
 }
 
+// Using anle of flahs, this function can draw smooth animation 
 void Flash::animateRotate() {
-	//cout << animate_angle << "  " << angle << endl;
 	animate_angle = animate_angle * 0.7 + angle * 0.3;
 }
 

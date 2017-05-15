@@ -1,8 +1,7 @@
-#include "Server.h"
+#include "server.h"
 
 int main()
 {
-	srand(time(NULL));
 	Server* server = new Server();
 	server->randGen();
 	server->Init();
